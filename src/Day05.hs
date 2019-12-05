@@ -14,47 +14,39 @@ run p prog inp outs = case code of
     -- output
     4  -> run (p+2) prog inp (v : outs)
     -- jump-if-true
-    5  -> case x /= 0 of
-      True  -> run y prog inp outs
-      False -> run (p+3) prog inp outs
+    5  -> if x /= 0 then run y prog inp outs else run (p+3) prog inp outs
     -- jump-if-false
-    6  -> case x == 0 of
-      True  -> run y prog inp outs
-      False -> run (p+3) prog inp outs
+    6  -> if x == 0 then run y prog inp outs else run (p+3) prog inp outs
     -- less than  
-    7  -> case x < y of
-      True  -> run (p+4) (update addr prog 1) inp outs
-      False -> run (p+4) (update addr prog 0) inp outs
+    7  -> if x < y then run (p+4) (update addr prog 1) inp outs else run (p+4) (update addr prog 0) inp outs
     -- equals  
-    8  -> case x == y of
-      True  -> run (p+4) (update addr prog 1) inp outs
-      False -> run (p+4) (update addr prog 0) inp outs
+    8  -> if x == y then run (p+4) (update addr prog 1) inp outs else run (p+4) (update addr prog 0) inp outs
     -- termination  
     99 -> (prog, outs)
-    _  -> error ("Incorrect code!")
+    _  -> error "Incorrect code!"
 
     where
       reg i = prog `Seq.index` i
-      code  = mod (reg p) 100
-      modes = div (reg p) 100
+      code  = reg p `mod` 100
+      modes = reg p `div` 100
 
       update i prod v = Seq.update i v prog
 
-      addr | elem code [1,2,7,8] = reg (p+3)
-           | elem code [3,4]     = reg (p+1)
-           | otherwise           = error ("Incorrect code!")
+      addr | code `elem` [1,2,7,8] = reg (p+3)
+           | code `elem` [3,4]     = reg (p+1)
+           | otherwise           = error "Incorrect code!"
 
       x = case modes `mod` 10 of
-        0 -> reg (reg (p+1))
+        0 -> reg $ reg (p+1)
         1 -> reg (p+1)
-        _ -> error ("Incorrect mode!")
+        _ -> error "Incorrect mode!"
 
       y = case modes `div` 10 of
-        0 -> reg (reg (p+2))
+        0 -> reg $ reg (p+2)
         1 -> reg (p+2)
-        _ -> error ("Incorrect mode!")
+        _ -> error "Incorrect mode!"
 
-      v = reg (reg (p+1))
+      v = reg $ reg (p+1)
 
 
 input :: Seq Int
