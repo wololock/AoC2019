@@ -1,43 +1,44 @@
 module Day02 where
 
 import Commons
+import Data.Sequence (Seq)
+import qualified Data.Sequence as Seq
 
-parseInput :: String -> [Int]
-parseInput = map read . (splitOn (==','))
+parseInput :: String -> Seq Int
+parseInput = Seq.fromList . map read . (splitOn (==','))
 
-run :: Int -> [Int] -> Int
-run p xs | code == 99 = head xs
-         | otherwise  = run (p+4) xs'
-         where
-          code = xs !! p
-          l    = xs !! (xs !! (p+1))
-          r    = xs !! (xs !! (p+2))
-          idx  = xs !! (p+3)
-          op   = case code of
-                  1 -> (+)
-                  2 -> (*)
-          xs'  = take idx xs ++ op l r : drop (idx+1) xs
+run :: Int -> Seq Int -> Int
+run p prog = case code of
+    -- addition
+    1  -> run (p+4) (update addr prog (x+y))
+    -- multiplication
+    2  -> run (p+4) (update addr prog (x*y))
+    -- termination  
+    99 -> reg 0
+    _  -> error ("Incorrect code!")
 
-reset :: a -> a -> [a] -> [a]
-reset x y xs = [head xs, x, y] ++ drop 3 xs
+    where
+      reg i = prog `Seq.index` i
+      code  = reg p
+      x     = reg $ reg (p+1)
+      y     = reg $ reg (p+2)
+      addr  = reg (p+3)
 
-day02b :: Int -> [Int] -> Int
-day02b ex xs = 100 * noun + verb
+      update i prod v = Seq.update i v prog
+
+reset :: Int -> Int -> Seq Int -> Seq Int
+reset x y xs = (Seq.update 1 x (Seq.update 2 y xs))
+
+day02b :: Int -> Seq Int -> Int
+day02b n xs = 100 * noun + verb
   where
-    g        = flip reset 0
-    f x      = run 0 $ g x xs
-    (x',_)   = head $ dropWhile (\(_,v) -> ex > v) [(x, f x) | x <- [0..]]
+    (x',_)   = head $ dropWhile (\(_,v) -> n > v) [(x, run 0 (reset x 0 xs)) | x <- [0..]]
     noun     = x' - 1
-    g'       = reset noun
-    f' x     = run 0 $ g' x xs
-    (verb,_) = head $ dropWhile (\(_,v) -> ex /= v) [(x, f' x) | x <- [0..]]
-
-solution :: IO()
-solution = do putStr "Part 01: "              
-              intcodes <- parseInput <$> getInput "input02.txt"
-              print $ run 0 (reset 12 2 intcodes)
-              putStr "Part 02: "
-              print $ day02b 19690720 intcodes
+    (verb,_) = head $ dropWhile (\(_,v) -> n /= v) [(y, run 0 (reset noun y xs)) | y <- [0..]]
 
 main :: IO()
-main = solution
+main = do putStr "Part 01: "              
+          prog <- parseInput <$> getInput "input02.txt"
+          print $ run 0 (reset 12 2 prog)
+          putStr "Part 02: "
+          print $ day02b 19690720 prog
