@@ -5,7 +5,7 @@ import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 
 parseInput :: String -> Seq Int
-parseInput = Seq.fromList . map read . (splitOn (==','))
+parseInput = Seq.fromList . map read . splitOn (==',')
 
 run :: Int -> Seq Int -> Int
 run p prog = case code of
@@ -15,7 +15,7 @@ run p prog = case code of
     2  -> run (p+4) (update addr prog (x*y))
     -- termination  
     99 -> reg 0
-    _  -> error ("Incorrect code!")
+    _  -> error "Incorrect code!"
 
     where
       reg i = prog `Seq.index` i
@@ -27,7 +27,7 @@ run p prog = case code of
       update i prod v = Seq.update i v prog
 
 reset :: Int -> Int -> Seq Int -> Seq Int
-reset x y xs = (Seq.update 1 x (Seq.update 2 y xs))
+reset x y xs = Seq.update 1 x (Seq.update 2 y xs)
 
 day02b :: Int -> Seq Int -> Int
 day02b n xs = 100 * noun + verb
